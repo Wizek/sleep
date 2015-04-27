@@ -1,0 +1,74 @@
+<h1>sleep</h1>
+<script>
+// http://noisehack.com/generate-noise-web-audio-api
+
+var globalVolume = 1
+
+if (brownNoise) brownNoise.disconnect(audioContext.destination)
+
+var audioContext = new AudioContext()
+var prev = Date.now()
+var bufferSize = 4096
+var sInterval = 2
+var brownNoise = (function() {
+    var lastOut = 0.0;
+    var node = audioContext.createScriptProcessor(bufferSize, 1, 1);
+    node.onaudioprocess = function(e) {
+        var now = Date.now()
+        //console.log('offset', now - prev)
+        prev = now
+        var output = e.outputBuffer.getChannelData(0);
+        for (var i = 0; i < bufferSize; i++) {
+            var white = Math.random() * 2 - 1;
+            output[i] = (lastOut + (0.02 * white)) / 1.02;
+            lastOut = output[i];
+            output[i] *= 3.5; // (roughly) compensate for gain
+            var virtualMs = now +(i/bufferSize*441)
+            output[i] *= Math.sin(virtualMs/(1000*sInterval))*0.25 +0.75 // sin volume
+            output[i] *= globalVolume
+        }
+        //console.log(virtualMs)
+    }
+    return node;
+})();
+
+brownNoise.connect(audioContext.destination);
+//setTimeout(function(){brownNoise.disconnect(audioContext.destination);},2000)
+
+var sleepNow = function () {
+  require('child_process').spawn('pmset', ['sleepnow'], {
+   detached: true,
+ })
+}
+var sleepDisplay = function () {
+  require('child_process').spawn('open', ['/Users/milan/Downloads/SleepDisplay.app'], {
+   detached: true,
+ })
+}
+
+setTimeout(sleepDisplay, 1000)
+
+var lengthMins = 60
+var easeOutMins = 10
+var easeOutMs = easeOutMins * 60 * 1000
+var fullVolumeMins = lengthMins - easeOutMins
+
+var easeOutStart = function () {
+  console.log('easeOutStart')
+  var startTime = Date.now()
+  var scheduledEnd = startTime + easeOutMs
+  function setVolume () {
+    var doneRatio = (Date.now() - startTime) / easeOutMs
+    globalVolume = Math.max(1 - doneRatio, 0)
+    console.log('globalVolume', globalVolume)
+    if (globalVolume <= 0) {
+      clearInterval(interval)
+      sleepNow()
+    }
+  }
+  var interval = setInterval(setVolume, 1000)
+}
+
+setTimeout(easeOutStart, fullVolumeMins*60*1000)
+
+</script>
