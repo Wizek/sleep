@@ -1,4 +1,7 @@
 <h1>sleep</h1>
+<script src="http://loadr.aws.af.cm/load?packages=
+  github://Wizek/libs/reDomain.js
+"></script>
 <script>
 // http://noisehack.com/generate-noise-web-audio-api
 
@@ -10,10 +13,12 @@ var audioContext = new AudioContext()
 var prev = Date.now()
 var bufferSize = 4096
 var sInterval = 2
+var reDomainSinVolume = reDomain(-1, 1, 0.5, 1)
 var brownNoise = (function() {
     var lastOut = 0.0;
-    var node = audioContext.createScriptProcessor(bufferSize, 1, 1);
+    var node = audioContext.createScriptProcessor();
     node.onaudioprocess = function(e) {
+        var bufferSize = e.outputBuffer.length
         var now = Date.now()
         //console.log('offset', now - prev)
         prev = now
@@ -24,7 +29,8 @@ var brownNoise = (function() {
             lastOut = output[i];
             output[i] *= 3.5; // (roughly) compensate for gain
             var virtualMs = now +(i/bufferSize*441)
-            output[i] *= Math.sin(virtualMs/(1000*sInterval))*0.25 +0.75 // sin volume
+            // sin volume
+            output[i] *= reDomainSinVolume(Math.sin(virtualMs/(1000*sInterval)))
             output[i] *= globalVolume
         }
         //console.log(virtualMs)
