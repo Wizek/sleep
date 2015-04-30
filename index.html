@@ -45,6 +45,7 @@ var sleepNow = function () {
   require('child_process').spawn('pmset', ['sleepnow'], {
    detached: true,
  })
+  setTimeout(process.exit, 10000)
 }
 var sleepDisplay = function () {
   require('child_process').spawn('open', ['/Users/milan/Downloads/SleepDisplay.app'], {
